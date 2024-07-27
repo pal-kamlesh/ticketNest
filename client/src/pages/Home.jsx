@@ -43,7 +43,7 @@ export default function Home() {
   console.log(statusCount);
   return (
     <div className="max-w-7xl mx-auto min-h-screen border mt-2 ">
-      {/* <div className="grid grid-cols-12">
+      <div className="grid grid-cols-12">
         <div className=" col-span-8">
           <TicketTrendLineChart data={monthlyCount} />
         </div>
@@ -56,7 +56,7 @@ export default function Home() {
         <div className=" col-span-12">
           <PestBarChart data={serviceCount} />
         </div>
-      </div> */}
+      </div>
     </div>
   );
 }
