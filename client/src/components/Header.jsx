@@ -17,7 +17,7 @@ export default function Header() {
   const location = useLocation();
 
   return (
-    <Navbar fluid rounded className="border-b-2 max-w-7xl mx-auto ">
+    <Navbar fluid rounded className="border-b-2 max-w-[1400px] mx-auto ">
       <Navbar.Brand className=" cursor-pointer" onClick={() => navigate("/")}>
         <img src={logo} className="mr-1 h-[65px] " alt="Flowbite React Logo" />
         <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">

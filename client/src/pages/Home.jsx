@@ -11,6 +11,7 @@ import {
 } from "../redux/creater/createrSlice";
 import { unwrapResult } from "@reduxjs/toolkit";
 import PestBarChart from "../components/PestBarChart";
+import { FaChartLine, FaChartPie, FaBug, FaTools } from "react-icons/fa";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -42,19 +43,42 @@ export default function Home() {
   }, [dispatch]);
   console.log(statusCount);
   return (
-    <div className="max-w-7xl mx-auto min-h-screen border mt-2 ">
-      <div className="grid grid-cols-12">
-        <div className=" col-span-8">
-          <TicketTrendLineChart data={monthlyCount} />
+    <div className="max-w-[1400px] mx-auto min-h-screen py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+      <h1 className="text-4xl font-extrabold text-gray-900 mb-12 text-center">
+        Dashboard Analytics
+      </h1>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2">
+          <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">
+            <FaChartLine className="mr-2 text-indigo-500" /> Ticket Trend
+          </h2>
+          <div className="p-6">
+            <TicketTrendLineChart data={monthlyCount} />
+          </div>
         </div>
-        <div className=" col-span-4">
-          <TicketPieChart data={statusCount} />
+        <div className="lg:col-span-4 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2">
+          <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">
+            <FaChartPie className="mr-2 text-indigo-500" /> Ticket Status
+          </h2>
+          <div className="p-6">
+            <TicketPieChart data={statusCount} />
+          </div>
         </div>
-        <div className=" col-span-12">
-          <PestBarChart data={insectsCount} />
+        <div className="lg:col-span-6 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2">
+          <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">
+            <FaBug className="mr-2 text-indigo-500" /> Insect Distribution
+          </h2>
+          <div className="p-6">
+            <PestBarChart data={insectsCount} />
+          </div>
         </div>
-        <div className=" col-span-12">
-          <PestBarChart data={serviceCount} />
+        <div className="lg:col-span-6 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2">
+          <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">
+            <FaTools className="mr-2 text-indigo-500" /> Service Distribution
+          </h2>
+          <div className="p-6">
+            <PestBarChart data={serviceCount} />
+          </div>
         </div>
       </div>
     </div>
