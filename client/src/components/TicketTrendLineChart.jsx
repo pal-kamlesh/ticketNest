@@ -22,7 +22,6 @@ const TicketTrendLineChart = ({ data }) => (
         left: 20,
         bottom: 5,
       }}
-      className="border"
     >
       <CartesianGrid strokeDasharray="3 3" />
       <XAxis dataKey="month" />

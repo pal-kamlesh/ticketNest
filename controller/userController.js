@@ -97,6 +97,16 @@ const users = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+    res.status(403).json({
+      message: `🌟 Warning! 🌟
+
+By the decree of the ancient codex, deleting a User is forbidden. To do so would unravel the delicate fabric of our enchanted repository, causing chaos and confusion amongst the enchanted scrolls and tomes that rely on the presence of the User. The system would be unable to bear the loss, leading to a cascade of unintended consequences.
+
+Proceed with caution, for the magic of our system is delicate, and the deletion of a User is an act of grave consequence.
+
+Guard the sanctity of the User, and let the magic of the data flourish!`,
+    });
+    return;
     const deleted = await User.deleteOne({ _id: id });
     res.status(200).json({ message: "User Deleted", result: id });
   } catch (error) {
