@@ -49,7 +49,7 @@ const TicketSchema = new Schema(
     createdBy: { type: String },
     status: {
       type: String,
-      enum: ["Open", "Assigned", "Closed"],
+      enum: ["Open", "Assigned", "Closed", "Canceled"],
       default: "Open",
     },
     agent: {

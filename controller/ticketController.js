@@ -253,6 +253,26 @@ const entryToCQR = async (theTicket) => {
   }
 };
 
+// Ensure your function is async
+const cancelTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ticket = await Ticket.findByIdAndUpdate(
+      id,
+      { $set: { status: "Canceled" } },
+      { new: true } // Optionally return the updated document
+    ).populate("history");
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    res.status(200).json({ message: "Ticket Canceled!", ticket });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const reschedule = async (req, res, next) => {
   try {
     const { ticketId } = req.params;
@@ -456,6 +476,7 @@ const getMonthlyTicketChanges = async (req, res, next) => {
     next(error);
   }
 };
+
 const getStatusAvg = async (req, res, next) => {
   try {
     const pipeline4 = [
@@ -821,7 +842,7 @@ const getServicesCount = async (req, res, next) => {
     ];
     const d = await Ticket.aggregate(servicesPipeline);
     const data = formattedData(d);
-    res.status(200).json({ data });
+    res.status(200).json({ d });
   } catch (error) {
     next(error);
   }
@@ -941,4 +962,5 @@ export {
   getStatusAvg,
   getServicesCount,
   getInsectsCount,
+  cancelTicket,
 };

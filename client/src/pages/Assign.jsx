@@ -10,6 +10,7 @@ import {
   uploadFiles,
   setImageLinkOfTicketNo,
   updateImage,
+  cancelTicket,
 } from "../redux/assigner/assignerSlice";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +84,10 @@ export default function Manager() {
 
   const handleStatusUpdate = async (e, ticketId) => {
     const { value } = e.target;
+    if (value == "Canceled") {
+      dispatch(cancelTicket(ticketId));
+      return;
+    }
     const indexToUpdate = tickets.findIndex(
       (ticket) => ticket._id === ticketId
     );
@@ -196,6 +201,9 @@ export default function Manager() {
                               Assigned
                             </option>
                             <option value="Closed">Closed</option>
+                            {currentUser.rights.admin ? (
+                              <option value="Canceled">Canceled</option>
+                            ) : null}
                           </Select>
                         )}
                       </Table.Cell>
@@ -207,6 +215,7 @@ export default function Manager() {
                             toggleModal(),
                             handleClick(ticket._id),
                           ]}
+                          disabled={ticket.status === "Canceled"}
                         >
                           {ticket.status !== "Open" ? "View" : "Edit"}
                         </Button>
@@ -225,6 +234,7 @@ export default function Manager() {
                                 togglePrintModel(),
                                 handleClick(ticket._id),
                               ]}
+                              disabled={ticket.status === "Canceled"}
                             >
                               View Ticket
                             </Button>
@@ -235,6 +245,7 @@ export default function Manager() {
                                   setHistoryOpen(true),
                                   setCapturedTicketId(ticket._id),
                                 ]}
+                                disabled={ticket.status === "Canceled"}
                               >
                                 History
                               </Button>
@@ -248,6 +259,7 @@ export default function Manager() {
                                     setReassign(true),
                                     setCapturedTicketId(ticket._id),
                                   ]}
+                                  disabled={ticket.status === "Canceled"}
                                 >
                                   Reschedule
                                 </Button>
@@ -266,6 +278,7 @@ export default function Manager() {
                                     setImgUploadingTicketNo(ticket.ticketNo),
                                     setUpdatingId(ticket._id),
                                   ]}
+                                  disabled={ticket.status === "Canceled"}
                                 >
                                   {ticket.ticketImage !== "" && (
                                     <BiCheckboxChecked className=" h-6 w-6" />

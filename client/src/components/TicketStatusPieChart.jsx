@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import {
   PieChart,
   Pie,
@@ -8,7 +7,13 @@ import {
   Cell,
 } from "recharts";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
+// Define a color mapping for specific data keys
+const COLOR_MAP = {
+  Open: "#FF76CE",
+  Assigned: "#00C49F", // Green
+  Closed: "#FFBB28", // Yellow
+  Canceled: "#FF0000", // Crimson
+};
 
 const TicketStatusPieChart = ({ data }) => {
   return (
@@ -27,7 +32,11 @@ const TicketStatusPieChart = ({ data }) => {
           }
         >
           {data?.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            // Use the COLOR_MAP to get the color for each entry based on the name
+            <Cell
+              key={`cell-${index}`}
+              fill={COLOR_MAP[entry.name] || "#8884d8"}
+            />
           ))}
         </Pie>
         <Tooltip />

@@ -206,6 +206,24 @@ export const getTicket = createAsyncThunk(
   }
 );
 
+export const cancelTicket = createAsyncThunk(
+  "cancel/ticket",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/v1/ticket/cancel/${data}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData);
+      }
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.log(error);
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const incPrintCount = createAsyncThunk(
   "inc/printcount",
   async (data, { rejectWithValue }) => {
@@ -477,6 +495,23 @@ export const assignerSlice = createSlice({
         toast.success(payload.message);
       })
       .addCase(updateImage.rejected, (state, { payload }) => {
+        state.loading = false;
+        toast.error(payload.message);
+      })
+      .addCase(cancelTicket.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(cancelTicket.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.tickets = state.tickets.filter(
+          (ticket) => ticket._id !== payload.ticket._id
+        );
+        state.tickets.push(payload.ticket);
+        state.tickets = state.tickets.sort((a, b) => b.ticketNo - a.ticketNo);
+        state.newTicket = initialState.newTicket;
+        toast.success(payload.message);
+      })
+      .addCase(cancelTicket.rejected, (state, { payload }) => {
         state.loading = false;
         toast.error(payload.message);
       });

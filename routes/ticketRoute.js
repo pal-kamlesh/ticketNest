@@ -13,8 +13,9 @@ import {
   getInsectsCount,
   getServicesCount,
   getStatusAvg,
+  cancelTicket,
 } from "../controller/ticketController.js";
-import { verifyToken, ifAssign } from "../middleware/verifyUser.js";
+import { verifyToken, ifAssign, ifAdmin } from "../middleware/verifyUser.js";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.put("/:ticketId", verifyToken, update);
 router.get("/:ticketId/cqr", verifyToken, entryToCQR);
 router.get("/print/:ticketId", verifyToken, incPrintCount);
 router.post("/reschedule/:ticketId", verifyToken, reschedule);
+router.get("/cancel/:id", verifyToken, ifAdmin, cancelTicket);
 router.post("/updateImage", verifyToken, ticketImage);
 router.get("/stats/ticketStatusCounts", getTicketStatusCounts);
 router.get("/stats/getMonthlyStat", getMonthlyTicketChanges);
