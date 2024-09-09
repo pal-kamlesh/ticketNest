@@ -14,8 +14,9 @@ import {
   getServicesCount,
   getStatusAvg,
   cancelTicket,
+  genReport,
 } from "../controller/ticketController.js";
-import { verifyToken, ifAssign, ifAdmin } from "../middleware/verifyUser.js";
+import { verifyToken, ifAdmin } from "../middleware/verifyUser.js";
 
 const router = Router();
 
@@ -28,10 +29,11 @@ router.get("/print/:ticketId", verifyToken, incPrintCount);
 router.post("/reschedule/:ticketId", verifyToken, reschedule);
 router.get("/cancel/:id", verifyToken, ifAdmin, cancelTicket);
 router.post("/updateImage", verifyToken, ticketImage);
-router.get("/stats/ticketStatusCounts", getTicketStatusCounts);
-router.get("/stats/getMonthlyStat", getMonthlyTicketChanges);
-router.get("/stats/insectsCount", getInsectsCount);
-router.get("/stats/serviceCount", getServicesCount);
-router.get("/stats/statusAvg", getServicesCount);
+router.get("/stats/ticketStatusCounts", verifyToken, getTicketStatusCounts);
+router.get("/stats/getMonthlyStat", verifyToken, getMonthlyTicketChanges);
+router.get("/stats/insectsCount", verifyToken, getInsectsCount);
+router.get("/stats/serviceCount", verifyToken, getServicesCount);
+router.get("/stats/statusAvg", verifyToken, getStatusAvg);
+router.get("/reports/r1", verifyToken, genReport);
 
 export default router;

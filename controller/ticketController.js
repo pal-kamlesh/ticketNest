@@ -7,6 +7,8 @@ import {
 import axios from "axios";
 import pkg from "lodash";
 const { isEqual } = pkg;
+import fs from "fs";
+import ExcelJS from "exceljs";
 
 const create = async (req, res, next) => {
   try {
@@ -476,6 +478,29 @@ const getMonthlyTicketChanges = async (req, res, next) => {
     next(error);
   }
 };
+const genReport = async (req, res, next) => {
+  try {
+    const data = await Ticket.find(
+      {},
+      "contract selectedServices issue status ticketNo"
+    );
+    const excelBuffer = await generateExcel(data);
+    fs.writeFileSync("ticket_report.xlsx", excelBuffer);
+
+    // Set response headers and send the file
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=ticket_report.xlsx"
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.send(excelBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getStatusAvg = async (req, res, next) => {
   try {
@@ -842,7 +867,7 @@ const getServicesCount = async (req, res, next) => {
     ];
     const d = await Ticket.aggregate(servicesPipeline);
     const data = formattedData(d);
-    res.status(200).json({ d });
+    res.status(200).json({ data });
   } catch (error) {
     next(error);
   }
@@ -948,6 +973,46 @@ function areArraysEqual(array1, array2) {
   return isEqual(array1, array2);
 }
 
+async function generateExcel(data) {
+  try {
+    // Create a new workbook and a worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Tickets");
+
+    // Add header row
+    worksheet.columns = [
+      { header: "BillToName", key: "billToName", width: 30 },
+      { header: "ShipToName", key: "shipToName", width: 30 },
+      { header: "ContractNo", key: "contractNo", width: 15 },
+      { header: "TicketNo", key: "ticketNo", width: 10 },
+      { header: "Problem", key: "problem", width: 50 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Services", key: "services", width: 30 },
+    ];
+
+    // Add a row with the data
+    data.forEach((ticket) => {
+      worksheet.addRow({
+        billToName: ticket.contract.billToName.trim(),
+        shipToName: ticket.contract.shipToName.trim(),
+        contractNo: ticket.contract.number,
+        ticketNo: ticket.ticketNo,
+        problem: ticket.issue.problem.map((p) => p.label).join(", "),
+        status: ticket.status,
+        services: ticket.contract.selectedServices
+          .map((s) => s.name)
+          .join(", "),
+      });
+    });
+
+    // Write to file
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
+  } catch (error) {
+    console.log("WE encounter error");
+  }
+}
+
 export {
   create,
   getTicket,
@@ -963,4 +1028,5 @@ export {
   getServicesCount,
   getInsectsCount,
   cancelTicket,
+  genReport,
 };
