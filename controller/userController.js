@@ -99,7 +99,10 @@ const deleteUser = async (req, res, next) => {
     const { id } = req.params;
     res.status(403).json({
       message: `🌟 Enchanted Warning! 🌟
-Deleting a User would break the magical bonds of our data realm, scattering vital information into the void. Guard the User's existence to keep our enchanted system in balance!`,
+                 Deleting a User would break the magical bonds of
+                 our data realm, scattering vital information into
+                 the void. Guard the User's existence to keep our 
+                 enchanted system in balance!`,
     });
     return;
     const deleted = await User.deleteOne({ _id: id });

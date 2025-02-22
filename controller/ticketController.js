@@ -4,16 +4,19 @@ import {
   ticketRaised,
   ticketRescheduled,
 } from "../services/emailService.js";
-import axios from "axios";
-import pkg from "lodash";
-const { isEqual } = pkg;
-import fs from "fs";
-import ExcelJS from "exceljs";
+import {
+  areArraysEqual,
+  createTicketHistory,
+  createTicketHistoryEntry,
+  entryToCQR,
+  formattedData,
+  generateExcel,
+  getTicketData,
+} from "../utils/funtions.js";
 
 const create = async (req, res, next) => {
   try {
     const { _id, ...rest } = req.body;
-
     const aTicket = await Ticket.find(
       {
         contract: rest.contract,
@@ -44,7 +47,6 @@ const create = async (req, res, next) => {
 
     res.status(200).json({ message: "Ticket created", ticket: newTicket });
   } catch (error) {
-    // Handle errors
     next(error);
   }
 };
@@ -205,58 +207,7 @@ const update = async (req, res, next) => {
   }
 };
 
-const entryToCQR = async (theTicket) => {
-  try {
-    const token = await loginToCQR();
-    const {
-      contract: { selectedServices, number: contract },
-      scheduledDate,
-      ticketImage,
-    } = theTicket;
-    const image = ticketImage
-      ? ticketImage
-      : "https://res.cloudinary.com/epcorn/image/upload/v1712651284/ticketNest/tmp-1-1712651281899_rl1suj.png";
-    const comments = "All Job Done";
-    const completion = "Complete";
-    const serviceDate = scheduledDate;
-
-    const servicesArray = mergeUniqueServices(selectedServices);
-
-    for (const service of servicesArray) {
-      const { serviceId, name: serviceName } = service;
-
-      try {
-        await axios.post(
-          `https://cqr1.herokuapp.com/api/ticketReport/${serviceId}`,
-          {
-            image,
-            comments,
-            contract,
-            completion,
-            serviceDate,
-            serviceName,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      } catch (error) {
-        throw new Error(
-          `Error sending ticket report for service ${serviceName} (ID: ${serviceId}): ${error.message}`
-        );
-      }
-    }
-
-    return "ok";
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-// Ensure your function is async
-const cancelTicket = async (req, res) => {
+const cancelTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
     const ticket = await Ticket.findByIdAndUpdate(
@@ -385,15 +336,18 @@ const getMonthlyTicketChanges = async (req, res, next) => {
       },
       {
         $group: {
-          _id: { year: "$year", month: "$month", status: "$status" },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $group: {
-          _id: { year: "$_id.year", month: "$_id.month" },
-          statuses: {
-            $push: { status: "$_id.status", count: "$count" },
+          _id: {
+            year: "$year",
+            month: "$month",
+          },
+          open: {
+            $sum: { $cond: [{ $eq: ["$status", "Open"] }, 1, 0] },
+          },
+          assigned: {
+            $sum: { $cond: [{ $eq: ["$status", "Assigned"] }, 1, 0] },
+          },
+          closed: {
+            $sum: { $cond: [{ $eq: ["$status", "Closed"] }, 1, 0] },
           },
         },
       },
@@ -421,60 +375,18 @@ const getMonthlyTicketChanges = async (req, res, next) => {
               "$_id.month",
             ],
           },
-          statuses: 1,
-        },
-      },
-      {
-        $addFields: {
-          open: {
-            $sum: {
-              $map: {
-                input: "$statuses",
-                as: "s",
-                in: {
-                  $cond: [{ $eq: ["$$s.status", "Open"] }, "$$s.count", 0],
-                },
-              },
-            },
-          },
-          assigned: {
-            $sum: {
-              $map: {
-                input: "$statuses",
-                as: "s",
-                in: {
-                  $cond: [{ $eq: ["$$s.status", "Assigned"] }, "$$s.count", 0],
-                },
-              },
-            },
-          },
-          closed: {
-            $sum: {
-              $map: {
-                input: "$statuses",
-                as: "s",
-                in: {
-                  $cond: [{ $eq: ["$$s.status", "Closed"] }, "$$s.count", 0],
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          month: 1,
           open: 1,
           assigned: 1,
           closed: 1,
         },
       },
-      { $sort: { year: 1, month: -1 } },
+      { $sort: { year: 1, month: 1 } },
     ];
+
     const data = await TicketHistory.aggregate(monthStatusPipeline);
-    res.status(200).json({ data });
+    const ticketData = await getTicketData();
+    res.status(200).json({ monthlyTicketStatus: data, yearlyData: ticketData });
   } catch (error) {
-    console.error("Error in getMonthlyTicketChanges:", error);
     next(error);
   }
 };
@@ -485,8 +397,6 @@ const genReport = async (req, res, next) => {
       "contract selectedServices issue status ticketNo"
     );
     const excelBuffer = await generateExcel(data);
-    fs.writeFileSync("ticket_report.xlsx", excelBuffer);
-
     // Set response headers and send the file
     res.setHeader(
       "Content-Disposition",
@@ -886,132 +796,6 @@ const getInsectsCount = async (req, res, next) => {
     next(error);
   }
 };
-
-const loginToCQR = async () => {
-  try {
-    const loginResponse = await axios.post(
-      "https://cqr1.herokuapp.com/api/login",
-      {
-        name: process.env.CQR_USER_NAME,
-        password: process.env.CQR_USER_PASSWORD,
-      }
-    );
-    return loginResponse.data.token;
-  } catch (error) {
-    throw new Error("Login to CQR failed!");
-  }
-};
-
-function mergeUniqueServices(services) {
-  const uniqueServices = new Map();
-
-  for (const { name, serviceId } of services) {
-    if (!uniqueServices.has(serviceId)) {
-      uniqueServices.set(serviceId, name);
-    } else {
-      uniqueServices.set(
-        serviceId,
-        `${uniqueServices.get(serviceId)}, ${name}`
-      );
-    }
-  }
-
-  return Array.from(uniqueServices, ([serviceId, name]) => ({
-    serviceId,
-    name,
-  }));
-}
-
-function formattedData(data) {
-  return data.map((item) => ({
-    name: item._id === "Crawling, Flying, Garden bug" ? "Others" : item._id, // Handling null _id
-    count: item.count,
-  }));
-}
-
-async function createTicketHistoryEntry(
-  ticketNo,
-  prevStatus,
-  newStatus,
-  author
-) {
-  const ticketHistory = await TicketHistory.findOne({ ticketNo });
-
-  const newChange = {
-    fields: { status: newStatus },
-    message: `Status changed from ${prevStatus} to ${newStatus}`,
-    author: author.username,
-  };
-
-  if (ticketHistory) {
-    ticketHistory.changes.push(newChange);
-    await ticketHistory.save();
-  } else {
-    const newTicketHistory = new TicketHistory({
-      ticketNo,
-      changes: [newChange],
-    });
-    await newTicketHistory.save();
-  }
-}
-
-async function createTicketHistory(ticketNo, author) {
-  const newChange = {
-    fields: { status: "Open" },
-    message: "Ticket created with Open status",
-    author: author.username,
-  };
-
-  const newTicketHistory = new TicketHistory({
-    ticketNo,
-    changes: [newChange],
-  });
-
-  await newTicketHistory.save();
-}
-function areArraysEqual(array1, array2) {
-  return isEqual(array1, array2);
-}
-
-async function generateExcel(data) {
-  try {
-    // Create a new workbook and a worksheet
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Tickets");
-
-    // Add header row
-    worksheet.columns = [
-      { header: "BillToName", key: "billToName", width: 30 },
-      { header: "ShipToName", key: "shipToName", width: 30 },
-      { header: "ContractNo", key: "contractNo", width: 15 },
-      { header: "TicketNo", key: "ticketNo", width: 10 },
-      { header: "Problem", key: "problem", width: 50 },
-      { header: "Status", key: "status", width: 15 },
-      { header: "Services", key: "services", width: 30 },
-    ];
-
-    // Add a row with the data
-    data.forEach((ticket) => {
-      worksheet.addRow({
-        billToName: ticket.contract.billToName.trim(),
-        shipToName: ticket.contract.shipToName.trim(),
-        contractNo: ticket.contract.number,
-        ticketNo: ticket.ticketNo,
-        problem: ticket.issue.problem.map((p) => p.label).join(", "),
-        status: ticket.status,
-        services: ticket.contract.selectedServices
-          .map((s) => s.name)
-          .join(", "),
-      });
-    });
-
-    // Write to file
-    const buffer = await workbook.xlsx.writeBuffer();
-    return buffer;
-  } catch (error) {
-    console.log("WE encounter error");
-  }
-}
 
 export {
   create,

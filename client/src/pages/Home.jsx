@@ -12,6 +12,7 @@ import {
 import { unwrapResult } from "@reduxjs/toolkit";
 import PestBarChart from "../components/PestBarChart";
 import { FaChartLine, FaChartPie, FaBug, FaTools } from "react-icons/fa";
+import { TicketTrendYearly } from "../components";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -19,6 +20,8 @@ export default function Home() {
   const [monthlyCount, setMonthlyCount] = useState([]);
   const [insectsCount, setInsectsCount] = useState([]);
   const [serviceCount, setServiceCount] = useState([]);
+  const [yearlyCount, setYearlyCount] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [statusAvg, setStatusAvg] = useState({});
 
   useEffect(() => {
@@ -34,14 +37,15 @@ export default function Home() {
       const r4 = unwrapResult(a4);
       const r5 = unwrapResult(a5);
       setStatusCount(r1.data);
-      setMonthlyCount(r2.data);
+      setMonthlyCount(r2.monthlyTicketStatus);
+      setYearlyCount(r2.yearlyData);
       setInsectsCount(r3.data);
       setServiceCount(r4.data);
       setStatusAvg(r5.data);
     }
     get();
   }, [dispatch]);
-  console.log(statusCount);
+  console.log(yearlyCount);
   return (
     <div className="max-w-[1400px] mx-auto min-h-screen py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
       <h1 className="text-4xl font-extrabold text-gray-900 mb-12 text-center">
@@ -81,6 +85,18 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {yearlyCount.length > 0 && (
+        <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2 mt-3">
+          <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">
+            <FaChartLine className="mr-2 text-indigo-500" /> Ticket Creation
+            Trend
+          </h2>
+          <div className="p-6">
+            <TicketTrendYearly ticketData={yearlyCount} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

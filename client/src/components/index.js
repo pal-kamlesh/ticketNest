@@ -16,6 +16,7 @@ import TicketTrendLineChart from "./TicketTrendLineChart";
 import TicketStatusPieChart from "./TicketStatusPieChart";
 import PestBarChart from "./PestBarChart";
 import TicketStatusAssign from "./TicketStatusAssign";
+import TicketTrendYearly from "./TicketTrendLIneYearly";
 export {
   Header,
   ProtectedRoute,
@@ -35,4 +36,5 @@ export {
   TicketStatusPieChart,
   PestBarChart,
   TicketStatusAssign,
+  TicketTrendYearly,
 };
