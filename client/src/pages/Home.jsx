@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import {
   getInsectsCount,
+  getJobs,
   getMonthlyStatusCount,
   getServiceCount,
   getStatusAvg,
@@ -12,7 +13,7 @@ import {
 import { unwrapResult } from "@reduxjs/toolkit";
 import PestBarChart from "../components/PestBarChart";
 import { FaChartLine, FaChartPie, FaBug, FaTools } from "react-icons/fa";
-import { TicketTrendYearly } from "../components";
+import { TicketTrendYearly, TodayJobTable } from "../components";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -21,6 +22,8 @@ export default function Home() {
   const [insectsCount, setInsectsCount] = useState([]);
   const [serviceCount, setServiceCount] = useState([]);
   const [yearlyCount, setYearlyCount] = useState([]);
+  const [todaysJob, setTodaysJob] = useState([]);
+  const [tomorrowJob, setTomorrowJob] = useState([]);
   // eslint-disable-next-line no-unused-vars
   const [statusAvg, setStatusAvg] = useState({});
 
@@ -31,26 +34,32 @@ export default function Home() {
       const a3 = await dispatch(getInsectsCount());
       const a4 = await dispatch(getServiceCount());
       const a5 = await dispatch(getStatusAvg());
+      const jobData = await dispatch(getJobs());
       const r1 = unwrapResult(a1);
       const r2 = unwrapResult(a2);
       const r3 = unwrapResult(a3);
       const r4 = unwrapResult(a4);
       const r5 = unwrapResult(a5);
+      const jobDataResult = unwrapResult(jobData);
       setStatusCount(r1.data);
       setMonthlyCount(r2.monthlyTicketStatus);
       setYearlyCount(r2.yearlyData);
       setInsectsCount(r3.data);
       setServiceCount(r4.data);
       setStatusAvg(r5.data);
+      setTodaysJob(jobDataResult.today);
+      setTomorrowJob(jobDataResult.tomorrow);
     }
     get();
   }, [dispatch]);
-  console.log(yearlyCount);
+
   return (
     <div className="max-w-[1400px] mx-auto min-h-screen py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
       <h1 className="text-4xl font-extrabold text-gray-900 mb-12 text-center">
         Dashboard Analytics
       </h1>
+      <TodayJobTable heading="Today's" data={todaysJob} />
+      <TodayJobTable heading="Tomorrow's" data={tomorrowJob} />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl overflow-hidden transition-transform transform hover:-translate-y-2">
           <h2 className="text-2xl font-semibold text-gray-800 p-6 bg-gradient-to-r from-indigo-50 to-blue-100 flex items-center">

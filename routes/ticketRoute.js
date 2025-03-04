@@ -15,6 +15,7 @@ import {
   getStatusAvg,
   cancelTicket,
   genReport,
+  jobs,
 } from "../controller/ticketController.js";
 import { verifyToken, ifAdmin } from "../middleware/verifyUser.js";
 
@@ -35,5 +36,6 @@ router.get("/stats/insectsCount", verifyToken, getInsectsCount);
 router.get("/stats/serviceCount", verifyToken, getServicesCount);
 router.get("/stats/statusAvg", verifyToken, getStatusAvg);
 router.get("/reports/r1", verifyToken, genReport);
+router.get("/reports/jobs/", jobs);
 
 export default router;

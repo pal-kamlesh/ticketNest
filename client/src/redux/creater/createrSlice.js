@@ -241,6 +241,24 @@ export const getStatusAvg = createAsyncThunk(
   }
 );
 
+export const getJobs = createAsyncThunk(
+  "get/jobs",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await fetch("/api/v1/ticket/reports/jobs");
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData);
+      }
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.log(error);
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const createrSlice = createSlice({
   name: "creater",
   initialState,

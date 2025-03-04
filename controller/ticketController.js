@@ -797,6 +797,39 @@ const getInsectsCount = async (req, res, next) => {
   }
 };
 
+const jobs = async (req, res, next) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const assignedJobs = await Ticket.find({ status: "Assigned" });
+
+    const todayJobs = [];
+    const tomorrowJobs = [];
+
+    assignedJobs.forEach((job) => {
+      if (job.scheduledDate) {
+        const jobDate = new Date(job.scheduledDate);
+        jobDate.setHours(0, 0, 0, 0);
+
+        if (jobDate.getTime() === today.getTime()) {
+          todayJobs.push(job);
+        } else if (jobDate.getTime() === tomorrow.getTime()) {
+          tomorrowJobs.push(job);
+        }
+      }
+    });
+
+    res.json({ today: todayJobs, tomorrow: tomorrowJobs });
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    next(error);
+  }
+};
+
 export {
   create,
   getTicket,
@@ -813,4 +846,5 @@ export {
   getInsectsCount,
   cancelTicket,
   genReport,
+  jobs,
 };

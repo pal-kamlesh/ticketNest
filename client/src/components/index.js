@@ -17,6 +17,7 @@ import TicketStatusPieChart from "./TicketStatusPieChart";
 import PestBarChart from "./PestBarChart";
 import TicketStatusAssign from "./TicketStatusAssign";
 import TicketTrendYearly from "./TicketTrendLIneYearly";
+import TodayJobTable from "./TodayJobTable";
 export {
   Header,
   ProtectedRoute,
@@ -37,4 +38,5 @@ export {
   PestBarChart,
   TicketStatusAssign,
   TicketTrendYearly,
+  TodayJobTable,
 };
