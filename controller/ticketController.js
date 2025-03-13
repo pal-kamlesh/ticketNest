@@ -4,6 +4,7 @@ import {
   ticketRaised,
   ticketRescheduled,
 } from "../services/emailService.js";
+import { ticketService } from "../services/ticketService.js";
 import {
   areArraysEqual,
   createTicketHistory,
@@ -17,34 +18,7 @@ import {
 const create = async (req, res, next) => {
   try {
     const { _id, ...rest } = req.body;
-    const aTicket = await Ticket.find(
-      {
-        contract: rest.contract,
-        $or: [{ status: "Open" }, { status: "Assigned" }],
-      },
-      {
-        "contract.selectedServices": 1,
-        createdBy: 1,
-        ticketNo: 1,
-      }
-    )
-      .sort({ createdAt: -1 })
-      .limit(1);
-    if (aTicket.length > 0) {
-      const equal = areArraysEqual(
-        aTicket[0].contract.selectedServices,
-        rest.contract.selectedServices
-      );
-      if (equal) {
-        return res.status(400).json({
-          message: `Same ticket is already createdBy: ${aTicket[0].createdBy}, TicketNo: ${aTicket[0].ticketNo} but not closed yet! Please refresh the page.`,
-        });
-      }
-    }
-
-    const newTicket = await Ticket.create(rest);
-    await createTicketHistory(newTicket.ticketNo, req.user);
-
+    const newTicket = await ticketService.createTicket(rest, req.user);
     res.status(200).json({ message: "Ticket created", ticket: newTicket });
   } catch (error) {
     next(error);
@@ -125,27 +99,10 @@ const update = async (req, res, next) => {
     const { ticketId } = req.params;
     const updateData = req.body;
 
-    // Find the existing ticket document
     const existingTicket = await Ticket.findById(ticketId).lean();
 
     if (!existingTicket) {
       return res.status(404).json({ message: "Ticket not found" });
-    }
-
-    // Handle status change to "Assigned"
-    if (
-      updateData.agent !== "" &&
-      updateData.date !== "" &&
-      updateData.status === "Open"
-    ) {
-      updateData.status = "Assigned";
-      await ticketRaised(updateData, req.user.username);
-      await createTicketHistoryEntry(
-        existingTicket.ticketNo,
-        existingTicket.status,
-        "Assigned",
-        req.user
-      );
     }
 
     // Handle status change to "Closed"
@@ -177,11 +134,25 @@ const update = async (req, res, next) => {
           .status(200)
           .json({ message: "Ticket Closed!", ticket: populatedTicket });
       } catch (error) {
-        console.error("Error in entryToCQR function:", error.message);
         return res
           .status(500)
           .json({ message: "An error occurred while closing the ticket" });
       }
+    }
+
+    // Check if ticket should be marked as Assigned
+    const shouldAssign =
+      updateData.agent && updateData.date && updateData.status === "Open";
+
+    if (shouldAssign) {
+      updateData.status = "Assigned";
+      await ticketRaised(updateData, req.user.username);
+      await createTicketHistoryEntry(
+        existingTicket.ticketNo,
+        existingTicket.status,
+        "Assigned",
+        req.user
+      );
     }
 
     // Update the ticket document and populate the history field
@@ -276,6 +247,7 @@ const reschedule = async (req, res, next) => {
     next(error);
   }
 };
+
 const ticketImage = async (req, res, next) => {
   try {
     const { ticketId, link } = req.body;
@@ -301,6 +273,7 @@ const ticketImage = async (req, res, next) => {
     next(error);
   }
 };
+
 const getTicketStatusCounts = async (req, res, next) => {
   try {
     const statusCounts = await Ticket.aggregate([
@@ -323,6 +296,7 @@ const getTicketStatusCounts = async (req, res, next) => {
     return [];
   }
 };
+
 const getMonthlyTicketChanges = async (req, res, next) => {
   try {
     const monthStatusPipeline = [
@@ -390,6 +364,7 @@ const getMonthlyTicketChanges = async (req, res, next) => {
     next(error);
   }
 };
+
 const genReport = async (req, res, next) => {
   try {
     const data = await Ticket.find(
